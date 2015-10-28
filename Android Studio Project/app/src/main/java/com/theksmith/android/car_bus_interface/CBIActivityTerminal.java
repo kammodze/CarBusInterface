@@ -30,6 +30,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.theksmith.android.helpers.AppState;
+import com.theksmith.android.helpers.IOUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -71,6 +72,7 @@ public class CBIActivityTerminal extends Activity {
     private static final String TAG = "CBIActivityTerminal";
     private static final boolean D = BuildConfig.SHOW_DEBUG_LOG_LEVEL > 0;
     private static final boolean DD = BuildConfig.SHOW_DEBUG_LOG_LEVEL > 1;
+    private static final String LOGS_FILENAME = "CarBusInterfaceLogs.txt";
 
     private MenuItem mMenuItemScroll;
     private MenuItem mMenuItemShowTime;
@@ -348,6 +350,7 @@ public class CBIActivityTerminal extends Activity {
         SpannableString span = new SpannableString(message);
         span.setSpan(color, 0, message.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         mTxtTerminal.append(span);
+        IOUtils.saveToFile(LOGS_FILENAME, span.toString());
 
         //if RX is complete, show a prompt marker
         if (data.rxComplete) {
@@ -355,6 +358,7 @@ public class CBIActivityTerminal extends Activity {
             span = new SpannableString(message);
             span.setSpan(Color.WHITE, 0, message.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             mTxtTerminal.append(span);
+            IOUtils.saveToFile(LOGS_FILENAME, span.toString());
         }
 
         if (mAutoScroll) {
