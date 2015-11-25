@@ -33,7 +33,10 @@ import com.theksmith.android.helpers.AppState;
 import com.theksmith.android.helpers.IOUtils;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.theksmith.android.car_bus_interface.BusData.*;
 
@@ -96,6 +99,16 @@ public class CBIActivityTerminal extends Activity {
     private static final int MAX_TERMINAL_LINES = 550;
     private static final int MAX_TERMINAL_LINES_TRIM = 50; //how much space to make each time we reach MAX_TERMINAL_LINES (trimming a single line at a time would result in constant UI updates)
 
+    private static String VEHICLE_SPEED_COMMAND = "010D";
+    private static String SET_UP_COMMAND = "AT SP 0";
+
+    private List<Integer> speedList = new ArrayList<>();
+
+    private long startTime;
+    private long stopTime;
+    private boolean isRunning = false;
+    private boolean gotData;
+    private int mElapsedSeconds;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +128,102 @@ public class CBIActivityTerminal extends Activity {
 
         final Button btnSend = (Button) findViewById(R.id.btnSend);
         btnSend.setOnClickListener(mBtnSend_OnClickListener);
+
+        final Button startStopButton = (Button) findViewById(R.id.button);
+        startStopButton.setText(isRunning ? "STOP" : "START");
+        startStopButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                isRunning = !isRunning;
+                if (isRunning) {
+                    speedList.clear();
+                    startTime = System.nanoTime();
+                    startStopButton.setText("STOP");
+                } else {
+                    stopTime = System.nanoTime();
+                    startStopButton.setText("START");
+                }
+            }
+        });
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        getTimeData();
+                        getSpeedData();
+                        updateUI();
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        thread.start();
+    }
+
+    private void getTimeData() {
+        long elapsedTime = 0;
+        if (isRunning) {
+            elapsedTime = System.nanoTime() - startTime;
+        } else if (stopTime > 0) {
+            elapsedTime = stopTime - startTime;
+        }
+
+        mElapsedSeconds = (int) TimeUnit.NANOSECONDS.toSeconds(elapsedTime);
+
+        final String timeString = String.format("%d min, %d sec",
+                TimeUnit.NANOSECONDS.toMinutes(elapsedTime),
+                TimeUnit.NANOSECONDS.toSeconds(elapsedTime) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.NANOSECONDS.toMinutes(elapsedTime)));
+
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView time = (TextView) findViewById(R.id.timeTextView);
+                time.setText(timeString);
+            }
+        });
+    }
+
+    private void getSpeedData() {
+        if (isRunning && gotData) {
+            serviceMainSendBusCommand(VEHICLE_SPEED_COMMAND);
+            gotData = false;
+        }
+    }
+
+    private void updateUI() {
+        if (speedList.size() > 0) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    TextView dataTextView = (TextView) findViewById(R.id.dataTextView);
+                    dataTextView.setText("Data: " + speedList.size() + ", last: " + speedList.get(speedList.size() - 1) + ", avg: " + calculateAverage(speedList));
+
+                    TextView distanceTextView = (TextView) findViewById(R.id.distanceTextView);
+                    double timeInHours = mElapsedSeconds / 3600.0;
+                    if (timeInHours != 0.0) {
+                        distanceTextView.setText(String.valueOf(calculateAverage(speedList) * timeInHours));
+                    }
+                }
+            });
+        }
+
+    }
+
+    private double calculateAverage(List<Integer> marks) {
+        Integer sum = 0;
+        if (!marks.isEmpty()) {
+            for (Integer mark : marks) {
+                sum += mark;
+            }
+            return sum.doubleValue() / marks.size();
+        }
+        return sum;
     }
 
     @Override
@@ -279,10 +388,8 @@ public class CBIActivityTerminal extends Activity {
 
         final ScrollView scrollView = (ScrollView) findViewById(R.id.scrollView);
 
-        scrollView.post(new Runnable()
-        {
-            public void run()
-            {
+        scrollView.post(new Runnable() {
+            public void run() {
                 scrollView.smoothScrollTo(0, mTxtTerminal.getBottom());
             }
         });
@@ -401,7 +508,8 @@ public class CBIActivityTerminal extends Activity {
                     Message message = Message.obtain(null, CBIServiceMain.BOUND_MSG_UNREGISTER_CLIENT);
                     message.replyTo = mServiceMainIncomingMessenger;
                     mServiceMainMessenger.send(message);
-                } catch (RemoteException ignored) {}
+                } catch (RemoteException ignored) {
+                }
             }
 
             unbindService(mServiceMainConnection);
@@ -441,6 +549,13 @@ public class CBIActivityTerminal extends Activity {
                     if (message.obj != null) {
                         BusData data = (BusData) message.obj;
                         terminalAppend(data);
+                        String response = data.data;
+                        int index = response.indexOf("41 0D");
+                        if (index > -1) {
+                            int speed = Integer.parseInt(response.substring(index + 6, index + 8), 16);
+                            speedList.add(speed);
+                        }
+                        gotData = true;
                     }
                     break;
 
