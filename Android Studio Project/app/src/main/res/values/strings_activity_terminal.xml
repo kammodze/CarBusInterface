@@ -2,6 +2,7 @@
 <resources>
 
     <string name="title_activity_terminal">Debug Terminal</string>
+    <string name="title_activity_server_config">Server Config</string>
 
     <string name="action_scroll">Auto Scroll</string>
     <string name="action_show_time">Show Time</string>

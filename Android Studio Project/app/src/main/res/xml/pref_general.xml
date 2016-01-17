@@ -44,6 +44,16 @@
         android:key="category_general"
         android:title="@string/category_general_title" >
 
+        <Preference
+            android:key="action_server_config"
+            android:title="@string/pref_title_action_server_config"
+            android:summary="@string/pref_summary_action_server_config" >
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetClass="com.theksmith.android.car_bus_interface.ServerConfigActivity"
+                android:targetPackage="com.theksmith.android.car_bus_interface" />
+        </Preference>
+
         <com.theksmith.android.helpers.BluetoothListPreference
             android:key="bluetooth_mac"
             android:defaultValue=""

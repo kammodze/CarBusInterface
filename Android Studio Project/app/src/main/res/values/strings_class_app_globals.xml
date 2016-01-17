@@ -2,5 +2,6 @@
 <resources>
 
     <string name="app_global_b_app_is_running">app_global_b_app_is_running</string>
+    <string name="app_global_socekt">app_global_socket</string>
 
 </resources>

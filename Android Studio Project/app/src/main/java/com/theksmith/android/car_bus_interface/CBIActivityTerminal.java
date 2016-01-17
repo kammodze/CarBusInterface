@@ -29,9 +29,13 @@ import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.theksmith.android.helpers.AppGlobals;
 import com.theksmith.android.helpers.AppState;
 import com.theksmith.android.helpers.IOUtils;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -554,6 +558,7 @@ public class CBIActivityTerminal extends Activity {
                         if (index > -1) {
                             int speed = Integer.parseInt(response.substring(index + 6, index + 8), 16);
                             speedList.add(speed);
+                            sendDataToServer(speed);
                         }
                         gotData = true;
                     }
@@ -561,6 +566,19 @@ public class CBIActivityTerminal extends Activity {
 
                 default:
                     super.handleMessage(message);
+            }
+        }
+    }
+
+    private void sendDataToServer(int speed) {
+        Socket socket = (Socket) AppGlobals.getInstance(getApplicationContext()).get(R.string.app_global_socekt);
+        if (socket != null && !socket.isClosed()) {
+            OutputStream socketStream;
+            try {
+                socketStream = socket.getOutputStream();
+                socketStream.write(String.valueOf(speed).getBytes());
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }

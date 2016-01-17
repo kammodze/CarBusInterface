@@ -2,5 +2,9 @@
 <resources>
 
     <string name="app_name">Car Bus Interface</string>
+    <string name="port">port</string>
+    <string name="address">address</string>
+    <string name="connect">Connect...</string>
+    <string name="clear">Clear</string>
 
 </resources>
