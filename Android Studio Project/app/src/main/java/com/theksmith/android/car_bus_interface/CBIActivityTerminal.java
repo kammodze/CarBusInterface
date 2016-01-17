@@ -140,6 +140,7 @@ public class CBIActivityTerminal extends Activity {
             public void onClick(View view) {
                 isRunning = !isRunning;
                 if (isRunning) {
+                    serviceMainSendBusCommand(SET_UP_COMMAND);
                     speedList.clear();
                     startTime = System.nanoTime();
                     startStopButton.setText("STOP");
