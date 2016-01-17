@@ -65,10 +65,6 @@ public class CBIActvitySettings extends PreferenceActivity {
         bindPreferenceSummaryToValue(findPreference("bluetooth_mac"));
         bindPreferenceSummaryToValue(findPreference("elm_commands"));
 
-        //todo: the way we are storing these preferences is a quick hack, we need a custom preference screen to configure any number of these
-        for (int m = 1; m <= 10; m++) {
-            bindPreferenceSummaryToValue(findPreference("elm_monitor" + m));
-        }
     }
 
     private Preference.OnPreferenceClickListener mPrefOnClickListener = new Preference.OnPreferenceClickListener() {
